@@ -3,7 +3,7 @@ import pyttsx3
 import openai
 
 # Set up the OpenAI ChatGPT API
-openai.api_key = 'YOUR_API_KEY'  # Replace with your actual OpenAI API key
+openai.api_key = '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'  # Replace with your actual OpenAI API key
 
 # Initialize the speech recognizer
 recognizer = sr.Recognizer()
@@ -16,6 +16,25 @@ def speak(text):
     engine.say(text)
     engine.runAndWait()
 
+def listen_for_keyword(keyword="jarvis"):
+    """Function to listen for the specified keyword"""
+    while True:
+        with sr.Microphone() as source:
+            print("Listening for keyword...")
+            recognizer.pause_threshold = 0.8
+            audio = recognizer.listen(source)
+
+        try:
+            print("Recognizing...")
+            query = recognizer.recognize_google(audio, language='en-US')
+            print(f"You said: {query}")
+            if keyword in query.lower():
+                return True
+        except sr.UnknownValueError:
+            print("Sorry, I didn't catch that. Could you please repeat?")
+        except sr.RequestError:
+            print("Sorry, I'm currently offline. Please try again later.")
+
 def listen():
     """Function to listen to user's speech"""
     with sr.Microphone() as source:
@@ -27,20 +46,19 @@ def listen():
         print("Recognizing...")
         query = recognizer.recognize_google(audio, language='en-US')
         print(f"You said: {query}")
+        return query
     except sr.UnknownValueError:
         print("Sorry, I didn't catch that. Could you please repeat?")
-        return ""
     except sr.RequestError:
         print("Sorry, I'm currently offline. Please try again later.")
-        return ""
 
-    return query
+    return ""
 
 def chat_with_gpt():
     """Function to chat with ChatGPT"""
     speak("Sure, go ahead and ask your question.")
     question = listen()
-    
+
     if question:
         speak("Let me find the answer for you.")
         response = openai.Completion.create(
@@ -52,7 +70,7 @@ def chat_with_gpt():
             temperature=0.7
         )
         answer = response.choices[0].text.strip()
-        
+
         if answer:
             print(f"ChatGPT: {answer}")
             speak(answer)
@@ -63,14 +81,15 @@ def chat_with_gpt():
         speak("Sorry, I didn't hear your question.")
 
 # Main program loop
+speak("Waiting for keyword 'Jarvis'...")
+listen_for_keyword("jarvis")
+speak("Keyword detected. How can I assist you?")
+
 while True:
-    speak("How can I assist you?")
     command = listen().lower()
 
-    if "chat" in command:
-        chat_with_gpt()
-    elif "exit" in command:
+    if "exit" in command:
         speak("Goodbye!")
         break
     else:
-        speak("Sorry, I don't understand that command.")
+        chat_with_gpt()
